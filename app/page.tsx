@@ -1,103 +1,469 @@
-import Image from "next/image";
+// pages/index.tsx
+"use client";
+
+import { useState, useCallback, useRef, useEffect } from "react";
+import dynamic from "next/dynamic";
+import { useDropzone } from "react-dropzone";
+import axios from "axios";
+
+// Dynamically import map component to avoid SSR issues
+const MapComponent = dynamic(() => import("@/components/MapComponent"), {
+  ssr: false,
+  loading: () => (
+    <div className="h-96 bg-gray-200 animate-pulse rounded-lg flex items-center justify-center">
+      Loading Map...
+    </div>
+  ),
+});
+
+interface ImageData {
+  id: string;
+  filename: string;
+  lat?: number;
+  lon?: number;
+  keywords?: string;
+  description?: string;
+  size: number;
+  type: string;
+}
+
+interface Coordinates {
+  lat: number;
+  lon: number;
+}
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const [images, setImages] = useState<ImageData[]>([]);
+  const [selectedImage, setSelectedImage] = useState<ImageData | null>(null);
+  const [coordinates, setCoordinates] = useState<Coordinates>({
+    lat: 0,
+    lon: 0,
+  });
+  const [keywords, setKeywords] = useState("");
+  const [description, setDescription] = useState("");
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [showExistingTags, setShowExistingTags] = useState(true);
+  const [isWriting, setIsWriting] = useState(false);
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Handle file upload
+  const onDrop = useCallback(async (acceptedFiles: File[]) => {
+    setIsProcessing(true);
+    try {
+      const formData = new FormData();
+      acceptedFiles.forEach((file) => {
+        formData.append("images", file);
+      });
+
+      const response = await axios.post("/api/upload", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+
+      const uploadedImages: ImageData[] = response.data.images;
+      setImages((prev) => [...prev, ...uploadedImages]);
+
+      // Select first uploaded image
+      if (uploadedImages.length > 0) {
+        selectImage(uploadedImages[0]);
+      }
+    } catch (error) {
+      console.error("Upload failed:", error);
+      alert("Upload failed. Please try again.");
+    } finally {
+      setIsProcessing(false);
+    }
+  }, []);
+
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop,
+    accept: {
+      "image/jpeg": [".jpg", ".jpeg"],
+      "image/png": [".png"],
+      "image/webp": [".webp"],
+      "image/tiff": [".tiff", ".tif"],
+      "image/heic": [".heic"],
+      "image/heif": [".heif"],
+    },
+    multiple: true,
+  });
+
+  // Select an image for editing
+  const selectImage = (image: ImageData) => {
+    setSelectedImage(image);
+    if (image.lat && image.lon) {
+      setCoordinates({ lat: image.lat, lon: image.lon });
+    }
+    setKeywords(image.keywords || "");
+    setDescription(image.description || "");
+  };
+
+  // Handle coordinate changes from map
+  const handleCoordinateChange = (newCoords: Coordinates) => {
+    setCoordinates(newCoords);
+  };
+
+  // Handle manual coordinate input
+  const handleLatChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const lat = parseFloat(e.target.value) || 0;
+    setCoordinates((prev) => ({ ...prev, lat }));
+  };
+
+  const handleLonChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const lon = parseFloat(e.target.value) || 0;
+    setCoordinates((prev) => ({ ...prev, lon }));
+  };
+
+  // Search for places
+  const handleSearch = async () => {
+    if (!searchQuery.trim()) return;
+
+    try {
+      const response = await axios.get(
+        `/api/geocode?q=${encodeURIComponent(searchQuery)}`
+      );
+      setSearchResults(response.data.results || []);
+    } catch (error) {
+      console.error("Search failed:", error);
+    }
+  };
+
+  // Select search result
+  const selectSearchResult = (result: any) => {
+    setCoordinates({
+      lat: parseFloat(result.lat),
+      lon: parseFloat(result.lon),
+    });
+    setSearchResults([]);
+    setSearchQuery(result.display_name);
+  };
+
+  // Write EXIF tags
+  const writeExifTags = async () => {
+    if (!selectedImage) return;
+
+    setIsWriting(true);
+    try {
+      const response = await axios.post(
+        "/api/write",
+        {
+          id: selectedImage.id,
+          lat: coordinates.lat,
+          lon: coordinates.lon,
+          keywords: keywords.trim(),
+          description: description.trim(),
+        },
+        {
+          responseType: "blob",
+        }
+      );
+
+      // Create download link
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", `geotagged_${selectedImage.filename}`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+
+      alert("EXIF tags written successfully! File downloaded.");
+    } catch (error) {
+      console.error("Write failed:", error);
+      alert("Failed to write EXIF tags. Please try again.");
+    } finally {
+      setIsWriting(false);
+    }
+  };
+
+  // Clear all data
+  const clearAll = async () => {
+    try {
+      await axios.post("/api/clear");
+      setImages([]);
+      setSelectedImage(null);
+      setCoordinates({ lat: 0, lon: 0 });
+      setKeywords("");
+      setDescription("");
+      setSearchQuery("");
+      setSearchResults([]);
+    } catch (error) {
+      console.error("Clear failed:", error);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50 p-4">
+      <div className="max-w-7xl mx-auto">
+        <header className="text-center mb-8">
+          <h1 className="text-4xl font-bold text-gray-900 mb-2">
+            GeoImgr Tool
+          </h1>
+          <p className="text-gray-600">
+            Add GPS coordinates and metadata to your images
+          </p>
+        </header>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Left Panel - Upload and Image List */}
+          <div className="space-y-6">
+            {/* Upload Area */}
+            <div className="bg-white p-6 rounded-lg shadow-md">
+              <h2 className="text-xl font-semibold mb-4">Upload Images</h2>
+              <div
+                {...getRootProps()}
+                className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
+                  isDragActive
+                    ? "border-blue-500 bg-blue-50"
+                    : "border-gray-300 hover:border-gray-400"
+                }`}
+              >
+                <input {...getInputProps()} />
+                {isProcessing ? (
+                  <div className="text-blue-600">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
+                    Processing...
+                  </div>
+                ) : (
+                  <div>
+                    <p className="text-gray-600 mb-2">
+                      {isDragActive
+                        ? "Drop images here..."
+                        : "Drag & drop images here, or click to select"}
+                    </p>
+                    <p className="text-sm text-gray-500">
+                      Supports JPEG, PNG, WebP, TIFF, HEIC
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Image List */}
+            {images.length > 0 && (
+              <div className="bg-white p-6 rounded-lg shadow-md">
+                <h2 className="text-xl font-semibold mb-4">Uploaded Images</h2>
+                <div className="space-y-2 max-h-64 overflow-y-auto">
+                  {images.map((image) => (
+                    <div
+                      key={image.id}
+                      onClick={() => selectImage(image)}
+                      className={`p-3 rounded cursor-pointer transition-colors ${
+                        selectedImage?.id === image.id
+                          ? "bg-blue-100 border-2 border-blue-500"
+                          : "bg-gray-50 hover:bg-gray-100 border-2 border-transparent"
+                      }`}
+                    >
+                      <div className="font-medium truncate">
+                        {image.filename}
+                      </div>
+                      <div className="text-sm text-gray-500">
+                        {(image.size / 1024 / 1024).toFixed(2)} MB
+                        {image.lat && image.lon && (
+                          <span className="ml-2 text-green-600">
+                            ● Geotagged
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Clear Button */}
+            {images.length > 0 && (
+              <button
+                onClick={clearAll}
+                className="w-full bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 transition-colors"
+              >
+                Clear All
+              </button>
+            )}
+          </div>
+
+          {/* Center Panel - Map */}
+          <div className="bg-white p-6 rounded-lg shadow-md">
+            <h2 className="text-xl font-semibold mb-4">Location</h2>
+
+            {/* Search Box */}
+            <div className="mb-4">
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  placeholder="Search for a place or address..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyPress={(e) => e.key === "Enter" && handleSearch()}
+                  className="flex-1 p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+                <button
+                  onClick={handleSearch}
+                  className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  Search
+                </button>
+              </div>
+
+              {/* Search Results */}
+              {searchResults.length > 0 && (
+                <div className="mt-2 border border-gray-300 rounded-lg max-h-32 overflow-y-auto">
+                  {searchResults.map((result, index) => (
+                    <div
+                      key={index}
+                      onClick={() => selectSearchResult(result)}
+                      className="p-2 hover:bg-gray-100 cursor-pointer border-b border-gray-200 last:border-b-0"
+                    >
+                      <div className="text-sm truncate">
+                        {result.display_name}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Coordinate Inputs */}
+            <div className="grid grid-cols-2 gap-4 mb-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Latitude
+                </label>
+                <input
+                  type="number"
+                  step="any"
+                  value={coordinates.lat}
+                  onChange={handleLatChange}
+                  className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Longitude
+                </label>
+                <input
+                  type="number"
+                  step="any"
+                  value={coordinates.lon}
+                  onChange={handleLonChange}
+                  className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+            </div>
+
+            {/* Map */}
+            <div className="h-96 rounded-lg overflow-hidden">
+              <MapComponent
+                coordinates={coordinates}
+                onCoordinateChange={handleCoordinateChange}
+              />
+            </div>
+
+            {/* Existing Tags Toggle */}
+            <div className="mt-4">
+              <label className="flex items-center">
+                <input
+                  type="checkbox"
+                  checked={showExistingTags}
+                  onChange={(e) => setShowExistingTags(e.target.checked)}
+                  className="mr-2"
+                />
+                <span className="text-sm text-gray-700">
+                  Show existing geotags
+                </span>
+              </label>
+            </div>
+          </div>
+
+          {/* Right Panel - Metadata */}
+          <div className="space-y-6">
+            {/* Keywords */}
+            <div className="bg-white p-6 rounded-lg shadow-md">
+              <h2 className="text-xl font-semibold mb-4">Keywords/Tags</h2>
+              <textarea
+                placeholder="Enter comma-separated keywords..."
+                value={keywords}
+                onChange={(e) => setKeywords(e.target.value)}
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-vertical"
+                rows={3}
+                maxLength={6600}
+              />
+              <div className="text-sm text-gray-500 mt-1">
+                {keywords.length}/6600 characters
+              </div>
+            </div>
+
+            {/* Description */}
+            <div className="bg-white p-6 rounded-lg shadow-md">
+              <h2 className="text-xl font-semibold mb-4">Description</h2>
+              <textarea
+                placeholder="Enter image description..."
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-vertical"
+                rows={4}
+                maxLength={1300}
+              />
+              <div className="text-sm text-gray-500 mt-1">
+                {description.length}/1300 characters
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            {selectedImage && (
+              <div className="space-y-3">
+                <button
+                  onClick={writeExifTags}
+                  disabled={isWriting}
+                  className="w-full bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+                >
+                  {isWriting ? (
+                    <span className="flex items-center justify-center">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      Writing EXIF Tags...
+                    </span>
+                  ) : (
+                    "Write EXIF Tags & Download"
+                  )}
+                </button>
+              </div>
+            )}
+          </div>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+
+        {/* Help Section */}
+        <div className="mt-12 bg-white p-6 rounded-lg shadow-md">
+          <h2 className="text-xl font-semibold mb-4">How to Geotag Images</h2>
+          <ol className="list-decimal list-inside space-y-2 text-gray-700">
+            <li>
+              Upload one or more images using drag & drop or the file selector
+            </li>
+            <li>
+              Select an image from the list - existing geotags will be shown if
+              present
+            </li>
+            <li>
+              Set the location by dragging the map marker, searching for a
+              place, or entering coordinates manually
+            </li>
+            <li>
+              Optionally add keywords/tags and a description for SEO and
+              organization
+            </li>
+            <li>
+              Click "Write EXIF Tags & Download" to embed the metadata and
+              download the updated image
+            </li>
+            <li>
+              The downloaded image will contain all the geolocation and metadata
+              information
+            </li>
+          </ol>
+        </div>
+      </div>
     </div>
   );
 }
