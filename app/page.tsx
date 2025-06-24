@@ -211,7 +211,7 @@ export default function Home() {
           {/* Left Panel - Upload and Image List */}
           <div className="space-y-6">
             {/* Upload Area */}
-            <div className="bg-white p-6 rounded-lg shadow-md">
+            <div className="bg-white p-6 text-zinc-900 rounded-lg shadow-md">
               <h2 className="text-xl font-semibold mb-4">Upload Images</h2>
               <div
                 {...getRootProps()}
@@ -286,12 +286,14 @@ export default function Home() {
           </div>
 
           {/* Center Panel - Map */}
-          <div className="bg-white p-6 rounded-lg shadow-md">
-            <h2 className="text-xl font-semibold mb-4">Location</h2>
+          <div className="bg-white p-6 rounded-lg  shadow-md">
+            <h2 className="text-zinc-900 text-xl font-semibold mb-4">
+              Location
+            </h2>
 
             {/* Search Box */}
             <div className="mb-4">
-              <div className="flex gap-2">
+              <div className="flex text-zinc-600 gap-2">
                 <input
                   type="text"
                   placeholder="Search for a place or address..."
@@ -337,7 +339,7 @@ export default function Home() {
                   step="any"
                   value={coordinates.lat}
                   onChange={handleLatChange}
-                  className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full p-2 text-zinc-600 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
               <div>
@@ -349,7 +351,7 @@ export default function Home() {
                   step="any"
                   value={coordinates.lon}
                   onChange={handleLonChange}
-                  className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full p-2 text-zinc-600 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
             </div>
@@ -382,12 +384,14 @@ export default function Home() {
           <div className="space-y-6">
             {/* Keywords */}
             <div className="bg-white p-6 rounded-lg shadow-md">
-              <h2 className="text-xl font-semibold mb-4">Keywords/Tags</h2>
+              <h2 className="text-zinc-900 text-xl font-semibold mb-4">
+                Keywords/Tags
+              </h2>
               <textarea
                 placeholder="Enter comma-separated keywords..."
                 value={keywords}
                 onChange={(e) => setKeywords(e.target.value)}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-vertical"
+                className="w-full text-zinc-600 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-vertical"
                 rows={3}
                 maxLength={6600}
               />
@@ -398,12 +402,14 @@ export default function Home() {
 
             {/* Description */}
             <div className="bg-white p-6 rounded-lg shadow-md">
-              <h2 className="text-xl font-semibold mb-4">Description</h2>
+              <h2 className="text-zinc-900 text-xl font-semibold mb-4">
+                Description
+              </h2>
               <textarea
                 placeholder="Enter image description..."
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-vertical"
+                className="w-full text-zinc-600 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-vertical"
                 rows={4}
                 maxLength={1300}
               />
@@ -436,7 +442,9 @@ export default function Home() {
 
         {/* Help Section */}
         <div className="mt-12 bg-white p-6 rounded-lg shadow-md">
-          <h2 className="text-xl font-semibold mb-4">How to Geotag Images</h2>
+          <h2 className="text-zinc-900 text-xl font-semibold mb-4">
+            How to Geotag Images
+          </h2>
           <ol className="list-decimal list-inside space-y-2 text-gray-700">
             <li>
               Upload one or more images using drag & drop or the file selector
