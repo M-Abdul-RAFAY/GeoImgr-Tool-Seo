@@ -106,16 +106,16 @@ export default function Home() {
   };
 
   // Handle manual coordinate input
-  const handleLatChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const lat = parseFloat(e.target.value) || 0;
-    setCoordinates((prev) => ({ ...prev, lat }));
-  };
+  // const handleLatChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  //   const lat = parseFloat(e.target.value) || 0;
+  //   setCoordinates((prev) => ({ ...prev, lat }));
+  // };
 
-  const handleLonChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const lon = parseFloat(e.target.value);
-    console.log("User entered longitude:", lon);
-    setCoordinates((prev) => ({ ...prev, lon: isNaN(lon) ? 0 : lon }));
-  };
+  // const handleLonChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  //   const lon = parseFloat(e.target.value);
+  //   console.log("User entered longitude:", lon);
+  //   setCoordinates((prev) => ({ ...prev, lon: isNaN(lon) ? 0 : lon }));
+  // };
 
   // Search for places
   const handleSearch = async () => {
