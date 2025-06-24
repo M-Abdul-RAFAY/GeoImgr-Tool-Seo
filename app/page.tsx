@@ -1,7 +1,7 @@
 // pages/index.tsx
 "use client";
 
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback } from "react";
 import dynamic from "next/dynamic";
 import { useDropzone } from "react-dropzone";
 import axios from "axios";
@@ -43,11 +43,11 @@ export default function Home() {
   const [description, setDescription] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [showExistingTags, setShowExistingTags] = useState(true);
   const [isWriting, setIsWriting] = useState(false);
 
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  // const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Handle file upload
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
@@ -112,8 +112,9 @@ export default function Home() {
   };
 
   const handleLonChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const lon = parseFloat(e.target.value) || 0;
-    setCoordinates((prev) => ({ ...prev, lon }));
+    const lon = parseFloat(e.target.value);
+    console.log("User entered longitude:", lon);
+    setCoordinates((prev) => ({ ...prev, lon: isNaN(lon) ? 0 : lon }));
   };
 
   // Search for places
@@ -131,7 +132,14 @@ export default function Home() {
   };
 
   // Select search result
-  const selectSearchResult = (result: any) => {
+  interface SearchResult {
+    lat: string;
+    lon: string;
+    display_name: string;
+    [key: string]: unknown;
+  }
+
+  const selectSearchResult = (result: SearchResult) => {
     setCoordinates({
       lat: parseFloat(result.lat),
       lon: parseFloat(result.lon),
@@ -143,6 +151,7 @@ export default function Home() {
   // Write EXIF tags
   const writeExifTags = async () => {
     if (!selectedImage) return;
+    console.log("Sending to backend:", coordinates.lat, coordinates.lon);
 
     setIsWriting(true);
     try {
@@ -245,8 +254,10 @@ export default function Home() {
             {/* Image List */}
             {images.length > 0 && (
               <div className="bg-white p-6 rounded-lg shadow-md">
-                <h2 className="text-xl font-semibold mb-4">Uploaded Images</h2>
-                <div className="space-y-2 max-h-64 overflow-y-auto">
+                <h2 className="text-zinc-900 text-xl font-semibold mb-4">
+                  Uploaded Images
+                </h2>
+                <div className="text-gray-600 space-y-2 max-h-64 overflow-y-auto">
                   {images.map((image) => (
                     <div
                       key={image.id}
@@ -312,7 +323,7 @@ export default function Home() {
 
               {/* Search Results */}
               {searchResults.length > 0 && (
-                <div className="mt-2 border border-gray-300 rounded-lg max-h-32 overflow-y-auto">
+                <div className="mt-2 text-zinc-600 border border-gray-300 rounded-lg max-h-32 overflow-y-auto">
                   {searchResults.map((result, index) => (
                     <div
                       key={index}
@@ -338,7 +349,16 @@ export default function Home() {
                   type="number"
                   step="any"
                   value={coordinates.lat}
-                  onChange={handleLatChange}
+                  onChange={(e) => {
+                    const lat = parseFloat(e.target.value) || 0;
+                    console.log(
+                      "Latitude changed:",
+                      lat,
+                      "Longitude:",
+                      coordinates.lon
+                    );
+                    setCoordinates((prev) => ({ ...prev, lat }));
+                  }}
                   className="w-full p-2 text-zinc-600 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
@@ -350,7 +370,19 @@ export default function Home() {
                   type="number"
                   step="any"
                   value={coordinates.lon}
-                  onChange={handleLonChange}
+                  onChange={(e) => {
+                    const lon = parseFloat(e.target.value);
+                    console.log(
+                      "Longitude changed:",
+                      lon,
+                      "Latitude:",
+                      coordinates.lat
+                    );
+                    setCoordinates((prev) => ({
+                      ...prev,
+                      lon: isNaN(lon) ? 0 : lon,
+                    }));
+                  }}
                   className="w-full p-2 text-zinc-600 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
@@ -462,8 +494,8 @@ export default function Home() {
               organization
             </li>
             <li>
-              Click "Write EXIF Tags & Download" to embed the metadata and
-              download the updated image
+              Click &quot;Write EXIF Tags & Download&quot; to embed the metadata
+              and download the updated image
             </li>
             <li>
               The downloaded image will contain all the geolocation and metadata

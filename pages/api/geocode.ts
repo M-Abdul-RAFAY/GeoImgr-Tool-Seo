@@ -8,8 +8,8 @@ interface NominatimResult {
   osm_type: string;
   osm_id: string;
   boundingbox: string[];
-  lat: string;
-  lon: string;
+  lat: number;
+  lon: number;
   display_name: string;
   class: string;
   type: string;
@@ -61,8 +61,8 @@ export default async function handler(
     // Transform results to a consistent format
     const transformedResults = results.map((result) => ({
       id: result.place_id,
-      lat: result.lat,
-      lon: result.lon,
+      lat: Number(result.lat), // Convert to number
+      lon: Number(result.lon), // Convert to number
       display_name: result.display_name,
       type: result.type,
       class: result.class,

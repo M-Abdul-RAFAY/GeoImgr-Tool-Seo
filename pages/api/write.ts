@@ -41,13 +41,13 @@ export default async function handler(
     const outputPath = join(tempDir, `modified_${imageFile}`);
 
     // Prepare EXIF tags to write
-    const tags: any = {};
+    const tags: Record<string, unknown> = {};
 
     // Set GPS coordinates
     if (lat !== undefined && lon !== undefined) {
-      tags.GPSLatitude = Math.abs(lat);
+      tags.GPSLatitude = lat;
       tags.GPSLatitudeRef = lat >= 0 ? "N" : "S";
-      tags.GPSLongitude = Math.abs(lon);
+      tags.GPSLongitude = lon;
       tags.GPSLongitudeRef = lon >= 0 ? "E" : "W";
     }
 
