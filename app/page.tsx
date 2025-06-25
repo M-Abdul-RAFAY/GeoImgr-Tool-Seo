@@ -10,7 +10,7 @@ import axios from "axios";
 const MapComponent = dynamic(() => import("@/components/MapComponent"), {
   ssr: false,
   loading: () => (
-    <div className="h-96 bg-gray-200 animate-pulse rounded-lg flex items-center justify-center">
+    <div className="h-96 text-zinc-800 bg-gray-200 animate-pulse rounded-lg flex items-center justify-center">
       Loading Map...
     </div>
   ),
