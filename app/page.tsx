@@ -116,7 +116,7 @@ export default function Home() {
           `• Read-Only GPS: ${summary.readOnly} files\n` +
           `• No GPS Support: ${summary.unsupported} files` +
           (warnings.length > 0 ? `\n\nWarnings: ${warnings.length}` : "");
-        alert(successMessage);
+        // alert(successMessage);
       }
     } catch (error) {
       console.error("Upload failed:", error);
@@ -999,7 +999,7 @@ export default function Home() {
                 </button>
 
                 {/* Debug buttons for testing metadata */}
-                {process.env.NODE_ENV === "development" && (
+                {/* {process.env.NODE_ENV === "development" && (
                   <div className="space-y-2">
                     <button
                       onClick={debugMetadata}
@@ -1022,7 +1022,7 @@ export default function Home() {
                       </button>
                     )}
                   </div>
-                )}
+                )} */}
 
                 {(!selectedImage.canWriteGPS ||
                   !selectedImage.canWriteMetadata) && (
