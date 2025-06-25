@@ -1,0 +1,22 @@
+{
+  "functions": {
+    "pages/api/upload.js": {
+      "maxDuration": 60
+    },
+    "pages/api/write.js": {
+      "maxDuration": 30
+    },
+    "pages/api/geocode.js": {
+      "maxDuration": 15
+    },
+    "pages/api/clear.js": {
+      "maxDuration": 30
+    }
+  },
+  "regions": ["iad1"],
+  "build": {
+    "env": {
+      "NODE_OPTIONS": "--max-old-space-size=4096"
+    }
+  }
+}
