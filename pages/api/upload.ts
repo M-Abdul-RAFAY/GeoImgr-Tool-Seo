@@ -23,9 +23,10 @@ interface ImageData {
   type: string;
 }
 
-// Ensure temp directory exists
+// Ensure temp directory exists (Vercel: use /tmp)
 async function ensureTempDir() {
-  const tempDir = join(process.cwd(), "temp");
+  // Use /tmp for serverless compatibility
+  const tempDir = "/tmp";
   try {
     await fs.access(tempDir);
   } catch {
@@ -119,7 +120,7 @@ export default async function handler(
     const form = new IncomingForm({
       uploadDir: tempDir,
       keepExtensions: true,
-      maxFileSize: 50 * 1024 * 1024, // 50MB limit
+      maxFileSize: 10 * 1024 * 1024, // 10MB limit
     });
 
     const { files } = await new Promise<{ files: any }>((resolve, reject) => {
