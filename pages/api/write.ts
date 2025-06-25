@@ -27,7 +27,8 @@ export default async function handler(
       return res.status(400).json({ error: "Image ID is required" });
     }
 
-    const tempDir = join(process.cwd(), "temp");
+    // Use /tmp for serverless compatibility
+    const tempDir = "/tmp";
 
     // Find the file with this ID
     const files = await fs.readdir(tempDir);
