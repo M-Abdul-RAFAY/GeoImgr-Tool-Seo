@@ -72,14 +72,16 @@ export default function Home() {
   const [showExistingTags, setShowExistingTags] = useState(true);
   const [isWriting, setIsWriting] = useState(false);
   const [uploadWarnings, setUploadWarnings] = useState<string[]>([]);
-  const [supportSummary, setSupportSummary] = useState<SupportSummary | null>(null);
+  const [supportSummary, setSupportSummary] = useState<SupportSummary | null>(
+    null
+  );
 
   // Handle file upload
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
     setIsProcessing(true);
     setUploadWarnings([]);
     setSupportSummary(null);
-    
+
     try {
       const formData = new FormData();
       acceptedFiles.forEach((file) => {
@@ -93,10 +95,10 @@ export default function Home() {
       const uploadedImages: ImageData[] = response.data.images;
       const warnings: string[] = response.data.warnings || [];
       const summary: SupportSummary = response.data.supportSummary;
-      
+
       setImages((prev) => [...prev, ...uploadedImages]);
       setSupportSummary(summary);
-      
+
       if (warnings.length > 0) {
         setUploadWarnings(warnings);
       }
@@ -105,14 +107,15 @@ export default function Home() {
       if (uploadedImages.length > 0) {
         selectImage(uploadedImages[0]);
       }
-      
+
       if (uploadedImages.length > 0) {
-        const successMessage = `Successfully uploaded ${uploadedImages.length} image(s).\n\n` +
+        const successMessage =
+          `Successfully uploaded ${uploadedImages.length} image(s).\n\n` +
           `Format Support Summary:\n` +
           `• Full GPS Support: ${summary.fullySupported} files\n` +
           `• Read-Only GPS: ${summary.readOnly} files\n` +
           `• No GPS Support: ${summary.unsupported} files` +
-          (warnings.length > 0 ? `\n\nWarnings: ${warnings.length}` : '');
+          (warnings.length > 0 ? `\n\nWarnings: ${warnings.length}` : "");
         alert(successMessage);
       }
     } catch (error) {
@@ -120,7 +123,11 @@ export default function Home() {
       if (axios.isAxiosError(error) && error.response?.data) {
         const errorMessage = error.response.data.error || "Upload failed";
         const details = error.response.data.details;
-        alert(`Upload failed: ${errorMessage}${details ? `\n\nDetails: ${details}` : ''}`);
+        alert(
+          `Upload failed: ${errorMessage}${
+            details ? `\n\nDetails: ${details}` : ""
+          }`
+        );
       } else {
         alert("Upload failed. Please try again.");
       }
@@ -185,40 +192,46 @@ export default function Home() {
   // Write metadata
   const writeMetadata = async () => {
     if (!selectedImage) return;
-    
+
     // Check if image supports writing
     if (!selectedImage.canWriteGPS || !selectedImage.canWriteMetadata) {
-      const supportInfo = `Format Support for ${selectedImage.type}:\n\n` +
-        `• Can Read GPS: ${selectedImage.canReadGPS ? 'Yes' : 'No'}\n` +
-        `• Can Write GPS: ${selectedImage.canWriteGPS ? 'Yes' : 'No'}\n` +
-        `• Method: ${selectedImage.supportMethod || 'N/A'}\n\n` +
-        `${selectedImage.supportNotes || 'No additional notes'}`;
-      
+      const supportInfo =
+        `Format Support for ${selectedImage.type}:\n\n` +
+        `• Can Read GPS: ${selectedImage.canReadGPS ? "Yes" : "No"}\n` +
+        `• Can Write GPS: ${selectedImage.canWriteGPS ? "Yes" : "No"}\n` +
+        `• Method: ${selectedImage.supportMethod || "N/A"}\n\n` +
+        `${selectedImage.supportNotes || "No additional notes"}`;
+
       alert(supportInfo);
       return;
     }
-    
+
     // Validate coordinates
-    if (!coordinates.lat && coordinates.lat !== 0 || !coordinates.lon && coordinates.lon !== 0) {
-      alert("Please set a location on the map or enter coordinates before writing metadata.");
+    if (
+      (!coordinates.lat && coordinates.lat !== 0) ||
+      (!coordinates.lon && coordinates.lon !== 0)
+    ) {
+      alert(
+        "Please set a location on the map or enter coordinates before writing metadata."
+      );
       return;
     }
-    
+
     if (coordinates.lat < -90 || coordinates.lat > 90) {
       alert("Latitude must be between -90 and 90 degrees.");
       return;
     }
-    
+
     if (coordinates.lon < -180 || coordinates.lon > 180) {
       alert("Longitude must be between -180 and 180 degrees.");
       return;
     }
-    
+
     console.log("Writing metadata:");
     console.log("- Image ID:", selectedImage.id);
     console.log("- Coordinates:", coordinates.lat, coordinates.lon);
-    console.log("- Keywords:", keywords || 'none');
-    console.log("- Description:", description || 'none');
+    console.log("- Keywords:", keywords || "none");
+    console.log("- Description:", description || "none");
     console.log("- Support method:", selectedImage.supportMethod);
 
     setIsWriting(true);
@@ -230,9 +243,9 @@ export default function Home() {
         keywords: keywords.trim() || undefined,
         description: description.trim() || undefined,
       };
-      
+
       console.log("Sending request data:", requestData);
-      
+
       const response = await axios.post("/api/write", requestData, {
         responseType: "blob",
       });
@@ -248,23 +261,33 @@ export default function Home() {
       window.URL.revokeObjectURL(url);
 
       // Get metadata method from response headers
-      const metadataMethod = response.headers['x-metadata-method'] || selectedImage.supportMethod;
-      const verification = response.headers['x-metadata-verification'];
-      
-      let verificationMessage = '';
+      const metadataMethod =
+        response.headers["x-metadata-method"] || selectedImage.supportMethod;
+      const verification = response.headers["x-metadata-verification"];
+
+      let verificationMessage = "";
       if (verification) {
         try {
           const verifyData = JSON.parse(verification);
-          verificationMessage = `\n\nVerification Results:` +
-            `\n• GPS: ${verifyData.gpsWritten ? '✅ Written' : '❌ Failed'}${verifyData.gpsMatch ? ' & Verified' : ''}` +
-            `\n• Keywords: ${verifyData.keywordsWritten ? '✅ Written' : '❌ Failed'}${verifyData.keywordsMatch ? ' & Verified' : ''}` +
-            `\n• Description: ${verifyData.descriptionWritten ? '✅ Written' : '❌ Failed'}${verifyData.descriptionMatch ? ' & Verified' : ''}`;
+          verificationMessage =
+            `\n\nVerification Results:` +
+            `\n• GPS: ${verifyData.gpsWritten ? "✅ Written" : "❌ Failed"}${
+              verifyData.gpsMatch ? " & Verified" : ""
+            }` +
+            `\n• Keywords: ${
+              verifyData.keywordsWritten ? "✅ Written" : "❌ Failed"
+            }${verifyData.keywordsMatch ? " & Verified" : ""}` +
+            `\n• Description: ${
+              verifyData.descriptionWritten ? "✅ Written" : "❌ Failed"
+            }${verifyData.descriptionMatch ? " & Verified" : ""}`;
         } catch (e) {
-          console.warn('Could not parse verification data:', e);
+          console.warn("Could not parse verification data:", e);
         }
       }
-      
-      alert(`GPS metadata written successfully using ${metadataMethod?.toUpperCase()} method!\n\nFile downloaded with embedded location data.${verificationMessage}`);
+
+      alert(
+        `GPS metadata written successfully using ${metadataMethod?.toUpperCase()} method!\n\nFile downloaded with embedded location data.${verificationMessage}`
+      );
     } catch (error) {
       console.error("Write failed:", error);
       if (axios.isAxiosError(error) && error.response?.data) {
@@ -275,7 +298,11 @@ export default function Home() {
             const errorData = JSON.parse(reader.result as string);
             const errorMessage = errorData.error || "Failed to write metadata";
             const suggestion = errorData.suggestion || "";
-            alert(`${errorMessage}${suggestion ? `\n\nSuggestion: ${suggestion}` : ''}`);
+            alert(
+              `${errorMessage}${
+                suggestion ? `\n\nSuggestion: ${suggestion}` : ""
+              }`
+            );
           } catch {
             alert("Failed to write metadata. Please try again.");
           }
@@ -289,6 +316,64 @@ export default function Home() {
     }
   };
 
+  // Debug PNG chunks function
+  const debugPNGChunks = async () => {
+    if (!selectedImage) return;
+
+    try {
+      const response = await axios.post("/api/debug-png-chunks", {
+        id: selectedImage.id,
+      });
+
+      const debugInfo = response.data;
+
+      // Create a detailed debug report
+      const report =
+        `🔍 PNG CHUNKS DEBUG REPORT\n\n` +
+        `📁 File: ${debugInfo.filename}\n` +
+        `📏 Size: ${(debugInfo.totalSize / 1024).toFixed(1)} KB\n` +
+        `📊 Total Chunks: ${debugInfo.totalChunks}\n` +
+        `📝 Text Chunks: ${debugInfo.textChunks}\n` +
+        `🌍 GPS Chunks: ${debugInfo.gpsChunks}\n\n` +
+        `🗃️ GPS ANALYSIS:\n` +
+        `• Has GPS chunks: ${
+          debugInfo.summary.hasGPSChunks ? "✅ YES" : "❌ NO"
+        }\n` +
+        (debugInfo.summary.gpsChunkKeywords.length > 0
+          ? `• GPS keywords: ${debugInfo.summary.gpsChunkKeywords.join(", ")}\n`
+          : "") +
+        (debugInfo.summary.parsedGPSData.length > 0
+          ? `• Parsed GPS data:\n${debugInfo.summary.parsedGPSData
+              .map(
+                (gps: any) =>
+                  `  - ${gps.keyword} (${gps.format}): ${gps.gps.lat}, ${gps.gps.lon}`
+              )
+              .join("\n")}\n`
+          : "• No valid GPS data found\n") +
+        `\n📋 ALL TEXT CHUNKS:\n` +
+        debugInfo.chunks
+          .filter(
+            (chunk: any) => chunk.type === "tEXt" || chunk.type === "iTXt"
+          )
+          .map(
+            (chunk: any, i: number) =>
+              `${i + 1}. ${chunk.keyword || "Unknown"}: ${(
+                chunk.text || ""
+              ).substring(0, 50)}${(chunk.text || "").length > 50 ? "..." : ""}`
+          )
+          .join("\n");
+
+      // Show in alert for now
+      alert(report);
+
+      // Also log to console for detailed inspection
+      console.log("PNG chunks debug response:", debugInfo);
+    } catch (error) {
+      console.error("PNG chunks debug failed:", error);
+      alert("PNG chunks debug failed. Check console for details.");
+    }
+  };
+
   // Test coordinates function
   const testCoordinates = async () => {
     try {
@@ -298,14 +383,15 @@ export default function Home() {
         keywords: keywords.trim() || undefined,
         description: description.trim() || undefined,
       };
-      
+
       console.log("Testing coordinates with data:", requestData);
-      
+
       const response = await axios.post("/api/test-coordinates", requestData);
-      
+
       const testResult = response.data;
-      
-      const report = `🧪 COORDINATE TEST REPORT\n\n` +
+
+      const report =
+        `🧪 COORDINATE TEST REPORT\n\n` +
         `📊 INPUT VALUES:\n` +
         `• Lat: ${testResult.input.lat} (${testResult.types.lat})\n` +
         `• Lon: ${testResult.input.lon} (${testResult.types.lon})\n\n` +
@@ -313,18 +399,27 @@ export default function Home() {
         `• Lat: ${testResult.converted.lat}\n` +
         `• Lon: ${testResult.converted.lon}\n\n` +
         `✅ VALIDATION:\n` +
-        `• Valid Numbers: ${testResult.valid.numbers.latValid && testResult.valid.numbers.lonValid ? 'YES' : 'NO'}\n` +
-        `• Valid Ranges: ${testResult.valid.ranges.validLat && testResult.valid.ranges.validLon ? 'YES' : 'NO'}\n\n` +
+        `• Valid Numbers: ${
+          testResult.valid.numbers.latValid && testResult.valid.numbers.lonValid
+            ? "YES"
+            : "NO"
+        }\n` +
+        `• Valid Ranges: ${
+          testResult.valid.ranges.validLat && testResult.valid.ranges.validLon
+            ? "YES"
+            : "NO"
+        }\n\n` +
         `🌍 GPS CONVERSION:\n` +
-        (testResult.gpsData ? 
-          `• Lat: ${testResult.gpsData.lat.dms[0]}°${testResult.gpsData.lat.dms[1]}'${testResult.gpsData.lat.dms[2]}"${testResult.gpsData.lat.ref}\n` +
-          `• Lon: ${testResult.gpsData.lon.dms[0]}°${testResult.gpsData.lon.dms[1]}'${testResult.gpsData.lon.dms[2]}"${testResult.gpsData.lon.ref}\n`
-          : '• GPS conversion failed\n') +
-        `\n🎯 FINAL RESULT: ${testResult.success ? '✅ READY TO WRITE' : '❌ INVALID DATA'}`;
-      
+        (testResult.gpsData
+          ? `• Lat: ${testResult.gpsData.lat.dms[0]}°${testResult.gpsData.lat.dms[1]}'${testResult.gpsData.lat.dms[2]}"${testResult.gpsData.lat.ref}\n` +
+            `• Lon: ${testResult.gpsData.lon.dms[0]}°${testResult.gpsData.lon.dms[1]}'${testResult.gpsData.lon.dms[2]}"${testResult.gpsData.lon.ref}\n`
+          : "• GPS conversion failed\n") +
+        `\n🎯 FINAL RESULT: ${
+          testResult.success ? "✅ READY TO WRITE" : "❌ INVALID DATA"
+        }`;
+
       alert(report);
-      console.log('Coordinate test result:', testResult);
-      
+      console.log("Coordinate test result:", testResult);
     } catch (error) {
       console.error("Test failed:", error);
       alert("Coordinate test failed. Check console for details.");
@@ -334,42 +429,71 @@ export default function Home() {
   // Debug metadata function
   const debugMetadata = async () => {
     if (!selectedImage) return;
-    
+
     try {
       const response = await axios.post("/api/debug-metadata", {
-        id: selectedImage.id
+        id: selectedImage.id,
       });
-      
+
       const debugInfo = response.data;
-      
+
       // Create a detailed debug report
-      const report = `🔍 METADATA DEBUG REPORT\n\n` +
+      const report =
+        `🔍 METADATA DEBUG REPORT\n\n` +
         `📁 File: ${debugInfo.filename}\n` +
         `📊 Type: ${debugInfo.mimeType}\n` +
         `📏 Size: ${(debugInfo.fileSize / 1024).toFixed(1)} KB\n\n` +
         `🗃️ METADATA FOUND:\n` +
-        `• GPS: ${debugInfo.debug.hasGPS ? '✅ YES' : '❌ NO'}\n` +
-        `• Keywords: ${debugInfo.debug.hasKeywords ? '✅ YES' : '❌ NO'}\n` +
-        `• Description: ${debugInfo.debug.hasDescription ? '✅ YES' : '❌ NO'}\n` +
-        `• Date/Time: ${debugInfo.debug.hasDateTime ? '✅ YES' : '❌ NO'}\n` +
-        `• Camera Info: ${debugInfo.debug.hasCameraInfo ? '✅ YES' : '❌ NO'}\n\n` +
+        `• GPS: ${debugInfo.debug.hasGPS ? "✅ YES" : "❌ NO"}\n` +
+        `• Keywords: ${debugInfo.debug.hasKeywords ? "✅ YES" : "❌ NO"}\n` +
+        `• Description: ${
+          debugInfo.debug.hasDescription ? "✅ YES" : "❌ NO"
+        }\n` +
+        `• Date/Time: ${debugInfo.debug.hasDateTime ? "✅ YES" : "❌ NO"}\n` +
+        `• Camera Info: ${
+          debugInfo.debug.hasCameraInfo ? "✅ YES" : "❌ NO"
+        }\n\n` +
         `📋 DETAILED METADATA:\n` +
-        (debugInfo.metadata.gps ? `GPS: ${debugInfo.metadata.gps.lat}, ${debugInfo.metadata.gps.lon}\n` : '') +
-        (debugInfo.metadata.keywords ? `Keywords: ${debugInfo.metadata.keywords}\n` : '') +
-        (debugInfo.metadata.description ? `Description: ${debugInfo.metadata.description}\n` : '') +
-        (debugInfo.metadata.dateTime ? `Date: ${debugInfo.metadata.dateTime}\n` : '') +
-        (debugInfo.metadata.cameraMake ? `Camera: ${debugInfo.metadata.cameraMake} ${debugInfo.metadata.cameraModel || ''}\n` : '') +
-        (debugInfo.rawChunks ? `\n🧩 PNG CHUNKS (${debugInfo.rawChunks.length}):\n` +
-          debugInfo.rawChunks.map((chunk: any, i: number) => 
-            `${i + 1}. ${chunk.type}${chunk.keyword ? ` (${chunk.keyword})` : ''}${chunk.text ? `: ${chunk.text.substring(0, 50)}${chunk.text.length > 50 ? '...' : ''}` : ''}`
-          ).join('\n') : '');
-      
+        (debugInfo.metadata.gps
+          ? `GPS: ${debugInfo.metadata.gps.lat}, ${debugInfo.metadata.gps.lon}\n`
+          : "") +
+        (debugInfo.metadata.keywords
+          ? `Keywords: ${debugInfo.metadata.keywords}\n`
+          : "") +
+        (debugInfo.metadata.description
+          ? `Description: ${debugInfo.metadata.description}\n`
+          : "") +
+        (debugInfo.metadata.dateTime
+          ? `Date: ${debugInfo.metadata.dateTime}\n`
+          : "") +
+        (debugInfo.metadata.cameraMake
+          ? `Camera: ${debugInfo.metadata.cameraMake} ${
+              debugInfo.metadata.cameraModel || ""
+            }\n`
+          : "") +
+        (debugInfo.rawChunks
+          ? `\n🧩 PNG CHUNKS (${debugInfo.rawChunks.length}):\n` +
+            debugInfo.rawChunks
+              .map(
+                (chunk: any, i: number) =>
+                  `${i + 1}. ${chunk.type}${
+                    chunk.keyword ? ` (${chunk.keyword})` : ""
+                  }${
+                    chunk.text
+                      ? `: ${chunk.text.substring(0, 50)}${
+                          chunk.text.length > 50 ? "..." : ""
+                        }`
+                      : ""
+                  }`
+              )
+              .join("\n")
+          : "");
+
       // Show in alert for now (in production, you might want a modal)
       alert(report);
-      
+
       // Also log to console for detailed inspection
-      console.log('Debug metadata response:', debugInfo);
-      
+      console.log("Debug metadata response:", debugInfo);
     } catch (error) {
       console.error("Debug failed:", error);
       alert("Debug failed. Check console for details.");
@@ -426,37 +550,52 @@ export default function Home() {
             Add GPS coordinates and metadata to images in any format
           </p>
           <p className="text-sm text-gray-500 mt-2">
-            ✨ Now supports JPEG, PNG, WebP, TIFF, HEIC with universal metadata handling
+            ✨ Now supports JPEG, PNG, WebP, TIFF, HEIC with universal metadata
+            handling
           </p>
         </header>
 
         {/* Support Summary */}
         {supportSummary && (
           <div className="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <h3 className="text-blue-800 font-semibold mb-2">Format Support Summary:</h3>
+            <h3 className="text-blue-800 font-semibold mb-2">
+              Format Support Summary:
+            </h3>
             <div className="grid grid-cols-2 md:grid-cols-6 gap-4 text-sm">
               <div className="text-center">
-                <div className="text-2xl font-bold text-blue-600">{supportSummary.totalFiles}</div>
+                <div className="text-2xl font-bold text-blue-600">
+                  {supportSummary.totalFiles}
+                </div>
                 <div className="text-blue-700">Total Files</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-green-600">{supportSummary.fullySupported}</div>
+                <div className="text-2xl font-bold text-green-600">
+                  {supportSummary.fullySupported}
+                </div>
                 <div className="text-green-700">Full Support</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-yellow-600">{supportSummary.readOnly}</div>
+                <div className="text-2xl font-bold text-yellow-600">
+                  {supportSummary.readOnly}
+                </div>
                 <div className="text-yellow-700">Read Only</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-red-600">{supportSummary.unsupported}</div>
+                <div className="text-2xl font-bold text-red-600">
+                  {supportSummary.unsupported}
+                </div>
                 <div className="text-red-700">Unsupported</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-green-600">{supportSummary.canReadGPS}</div>
+                <div className="text-2xl font-bold text-green-600">
+                  {supportSummary.canReadGPS}
+                </div>
                 <div className="text-green-700">Can Read GPS</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-green-600">{supportSummary.canWriteGPS}</div>
+                <div className="text-2xl font-bold text-green-600">
+                  {supportSummary.canWriteGPS}
+                </div>
                 <div className="text-green-700">Can Write GPS</div>
               </div>
             </div>
@@ -466,7 +605,9 @@ export default function Home() {
         {/* Upload Warnings */}
         {uploadWarnings.length > 0 && (
           <div className="mb-6 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-            <h3 className="text-yellow-800 font-semibold mb-2">Upload Warnings:</h3>
+            <h3 className="text-yellow-800 font-semibold mb-2">
+              Upload Warnings:
+            </h3>
             <ul className="text-sm text-yellow-700 space-y-1">
               {uploadWarnings.map((warning, index) => (
                 <li key={index}>• {warning}</li>
@@ -539,18 +680,21 @@ export default function Home() {
                         {image.lat && image.lon && (
                           <span className="text-green-600">📍 Geotagged</span>
                         )}
-                        <span className={`text-xs px-2 py-1 rounded ${
-                          image.canReadGPS && image.canWriteGPS 
-                            ? 'bg-green-100 text-green-700'
-                            : image.canReadGPS 
-                            ? 'bg-yellow-100 text-yellow-700'
-                            : 'bg-red-100 text-red-700'
-                        }`}>
+                        <span
+                          className={`text-xs px-2 py-1 rounded ${
+                            image.canReadGPS && image.canWriteGPS
+                              ? "bg-green-100 text-green-700"
+                              : image.canReadGPS
+                              ? "bg-yellow-100 text-yellow-700"
+                              : "bg-red-100 text-red-700"
+                          }`}
+                        >
                           {getStatusText(image)}
                         </span>
                       </div>
                       <div className="text-xs text-gray-400 mt-1">
-                        Method: {image.supportMethod || 'Unknown'} | {image.type}
+                        Method: {image.supportMethod || "Unknown"} |{" "}
+                        {image.type}
                       </div>
                       {image.cameraMake && image.cameraModel && (
                         <div className="text-xs text-gray-400">
@@ -682,46 +826,80 @@ export default function Home() {
           <div className="space-y-6">
             {/* Current Image Info */}
             {selectedImage && (
-              <div className="bg-white p-6 rounded-lg shadow-md">
+              <div className="bg-white text-zinc-900 p-6 rounded-lg shadow-md">
                 <h2 className="text-zinc-900 text-xl font-semibold mb-4">
                   Selected Image
                 </h2>
                 <div className="space-y-2 text-sm">
-                  <div><strong>File:</strong> {selectedImage.filename}</div>
-                  <div><strong>Size:</strong> {(selectedImage.size / 1024 / 1024).toFixed(2)} MB</div>
-                  <div><strong>Format:</strong> {selectedImage.type}</div>
-                  
+                  <div>
+                    <strong>File:</strong> {selectedImage.filename}
+                  </div>
+                  <div>
+                    <strong>Size:</strong>{" "}
+                    {(selectedImage.size / 1024 / 1024).toFixed(2)} MB
+                  </div>
+                  <div>
+                    <strong>Format:</strong> {selectedImage.type}
+                  </div>
+
                   {/* Support Status */}
                   <div className="bg-gray-50 p-3 rounded mt-3">
-                    <div className="font-medium text-gray-700 mb-2">Format Support:</div>
+                    <div className="font-medium text-gray-700 mb-2">
+                      Format Support:
+                    </div>
                     <div className="grid grid-cols-2 gap-2 text-xs">
                       <div className="flex items-center gap-1">
-                        <span className={selectedImage.canReadGPS ? 'text-green-600' : 'text-red-600'}>
-                          {selectedImage.canReadGPS ? '✓' : '✗'}
+                        <span
+                          className={
+                            selectedImage.canReadGPS
+                              ? "text-green-600"
+                              : "text-red-600"
+                          }
+                        >
+                          {selectedImage.canReadGPS ? "✓" : "✗"}
                         </span>
                         Read GPS
                       </div>
                       <div className="flex items-center gap-1">
-                        <span className={selectedImage.canWriteGPS ? 'text-green-600' : 'text-red-600'}>
-                          {selectedImage.canWriteGPS ? '✓' : '✗'}
+                        <span
+                          className={
+                            selectedImage.canWriteGPS
+                              ? "text-green-600"
+                              : "text-red-600"
+                          }
+                        >
+                          {selectedImage.canWriteGPS ? "✓" : "✗"}
                         </span>
                         Write GPS
                       </div>
                       <div className="flex items-center gap-1">
-                        <span className={selectedImage.canReadMetadata ? 'text-green-600' : 'text-red-600'}>
-                          {selectedImage.canReadMetadata ? '✓' : '✗'}
+                        <span
+                          className={
+                            selectedImage.canReadMetadata
+                              ? "text-green-600"
+                              : "text-red-600"
+                          }
+                        >
+                          {selectedImage.canReadMetadata ? "✓" : "✗"}
                         </span>
                         Read Metadata
                       </div>
                       <div className="flex items-center gap-1">
-                        <span className={selectedImage.canWriteMetadata ? 'text-green-600' : 'text-red-600'}>
-                          {selectedImage.canWriteMetadata ? '✓' : '✗'}
+                        <span
+                          className={
+                            selectedImage.canWriteMetadata
+                              ? "text-green-600"
+                              : "text-red-600"
+                          }
+                        >
+                          {selectedImage.canWriteMetadata ? "✓" : "✗"}
                         </span>
                         Write Metadata
                       </div>
                     </div>
                     <div className="mt-2 text-xs text-gray-600">
-                      <strong>Method:</strong> {selectedImage.supportMethod || 'Unknown'}
+                      <strong>Method:</strong>{" "}
+                      {selectedImage.supportMethod || "Unknown"}
                     </div>
                     <div className="mt-1 text-xs text-gray-600">
                       {selectedImage.supportNotes}
@@ -730,13 +908,22 @@ export default function Home() {
 
                   {/* Existing Metadata */}
                   {selectedImage.lat && selectedImage.lon && (
-                    <div><strong>Current GPS:</strong> {selectedImage.lat.toFixed(6)}, {selectedImage.lon.toFixed(6)}</div>
+                    <div>
+                      <strong>Current GPS:</strong>{" "}
+                      {selectedImage.lat.toFixed(6)},{" "}
+                      {selectedImage.lon.toFixed(6)}
+                    </div>
                   )}
                   {selectedImage.dateTime && (
-                    <div><strong>Date Taken:</strong> {selectedImage.dateTime}</div>
+                    <div>
+                      <strong>Date Taken:</strong> {selectedImage.dateTime}
+                    </div>
                   )}
                   {selectedImage.cameraMake && selectedImage.cameraModel && (
-                    <div><strong>Camera:</strong> {selectedImage.cameraMake} {selectedImage.cameraModel}</div>
+                    <div>
+                      <strong>Camera:</strong> {selectedImage.cameraMake}{" "}
+                      {selectedImage.cameraModel}
+                    </div>
                   )}
                 </div>
               </div>
@@ -783,7 +970,11 @@ export default function Home() {
               <div className="space-y-3">
                 <button
                   onClick={writeMetadata}
-                  disabled={isWriting || (!selectedImage.canWriteGPS && !selectedImage.canWriteMetadata)}
+                  disabled={
+                    isWriting ||
+                    (!selectedImage.canWriteGPS &&
+                      !selectedImage.canWriteMetadata)
+                  }
                   className={`w-full py-3 px-4 rounded-lg transition-colors ${
                     selectedImage.canWriteGPS && selectedImage.canWriteMetadata
                       ? "bg-green-600 text-white hover:bg-green-700 disabled:bg-gray-400"
@@ -797,7 +988,8 @@ export default function Home() {
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
                       Writing Metadata...
                     </span>
-                  ) : selectedImage.canWriteGPS && selectedImage.canWriteMetadata ? (
+                  ) : selectedImage.canWriteGPS &&
+                    selectedImage.canWriteMetadata ? (
                     `Write GPS Data & Download (${selectedImage.supportMethod?.toUpperCase()})`
                   ) : selectedImage.canReadGPS ? (
                     "Show Format Support Info"
@@ -806,8 +998,8 @@ export default function Home() {
                   )}
                 </button>
 
-                {/* Debug button for testing metadata */}
-                {process.env.NODE_ENV === 'development' && (
+                {/* Debug buttons for testing metadata */}
+                {process.env.NODE_ENV === "development" && (
                   <div className="space-y-2">
                     <button
                       onClick={debugMetadata}
@@ -821,24 +1013,37 @@ export default function Home() {
                     >
                       🧪 Test Coordinates (Dev Only)
                     </button>
+                    {selectedImage?.type === "image/png" && (
+                      <button
+                        onClick={debugPNGChunks}
+                        className="w-full py-2 px-4 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm"
+                      >
+                        🧩 Debug PNG Chunks (Dev Only)
+                      </button>
+                    )}
                   </div>
                 )}
-                
-                {(!selectedImage.canWriteGPS || !selectedImage.canWriteMetadata) && (
-                  <div className={`text-sm text-center p-3 rounded ${
-                    selectedImage.canReadGPS 
-                      ? 'bg-yellow-50 text-yellow-700 border border-yellow-200'
-                      : 'bg-red-50 text-red-700 border border-red-200'
-                  }`}>
+
+                {(!selectedImage.canWriteGPS ||
+                  !selectedImage.canWriteMetadata) && (
+                  <div
+                    className={`text-sm text-center p-3 rounded ${
+                      selectedImage.canReadGPS
+                        ? "bg-yellow-50 text-yellow-700 border border-yellow-200"
+                        : "bg-red-50 text-red-700 border border-red-200"
+                    }`}
+                  >
                     <p className="font-semibold mb-1">
-                      {selectedImage.canReadGPS ? 'Read-Only Support' : 'Limited Support'}
+                      {selectedImage.canReadGPS
+                        ? "Read-Only Support"
+                        : "Limited Support"}
                     </p>
-                    <p className="text-xs">
-                      {selectedImage.supportNotes}
-                    </p>
+                    <p className="text-xs">{selectedImage.supportNotes}</p>
                     {!selectedImage.canWriteGPS && selectedImage.canReadGPS && (
                       <p className="text-xs mt-2 font-medium">
-                        💡 This format can read GPS data but writing is limited. The format may support GPS but our current libraries have limitations.
+                        💡 This format can read GPS data but writing is limited.
+                        The format may support GPS but our current libraries
+                        have limitations.
                       </p>
                     )}
                   </div>
@@ -855,58 +1060,87 @@ export default function Home() {
           </h2>
           <div className="grid md:grid-cols-2 gap-6">
             <div>
-              <h3 className="font-semibold text-gray-800 mb-3">How It Works:</h3>
+              <h3 className="font-semibold text-gray-800 mb-3">
+                How It Works:
+              </h3>
               <ol className="list-decimal list-inside space-y-2 text-gray-700">
                 <li>Upload images in any supported format</li>
                 <li>The app automatically detects format capabilities</li>
                 <li>Select an image to view its GPS support level</li>
                 <li>Set location using the map, search, or coordinates</li>
                 <li>Add optional keywords and description</li>
-                <li>Write GPS data using the appropriate method for each format</li>
+                <li>
+                  Write GPS data using the appropriate method for each format
+                </li>
               </ol>
             </div>
-            
-            <div>
-              <h3 className="font-semibold text-gray-800 mb-3">Format Support Matrix:</h3>
+
+            <div className="text-gray-700">
+              <h3 className="font-semibold text-gray-800 mb-3">
+                Format Support Matrix:
+              </h3>
               <div className="space-y-2 text-sm">
                 <div className="flex items-center gap-2">
                   <span className="text-green-600">● Full</span>
-                  <span><strong>JPEG/TIFF:</strong> Complete EXIF GPS support</span>
+                  <span>
+                    <strong>JPEG/TIFF:</strong> Complete EXIF GPS support
+                  </span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-green-600">● Full</span>
-                  <span><strong>WebP:</strong> RIFF-based GPS metadata</span>
+                  <span>
+                    <strong>WebP:</strong> RIFF-based GPS metadata
+                  </span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-green-600">● Full</span>
-                  <span><strong>PNG:</strong> Custom text chunk GPS storage</span>
+                  <span>
+                    <strong>PNG:</strong> Custom text chunk GPS storage
+                  </span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-yellow-600">◐ Read</span>
-                  <span><strong>HEIC/HEIF:</strong> Can read existing GPS, writing limited</span>
+                  <span>
+                    <strong>HEIC/HEIF:</strong> Can read existing GPS, writing
+                    limited
+                  </span>
                 </div>
               </div>
-              
+
               <div className="mt-4 p-3 bg-blue-50 rounded">
-                <h4 className="font-semibold text-blue-800 mb-1">Technical Methods:</h4>
+                <h4 className="font-semibold text-blue-800 mb-1">
+                  Technical Methods:
+                </h4>
                 <ul className="text-xs text-blue-700 space-y-1">
-                  <li>• <strong>EXIF:</strong> Standard camera metadata (JPEG, TIFF)</li>
-                  <li>• <strong>RIFF:</strong> Container-based metadata (WebP)</li>
-                  <li>• <strong>Custom:</strong> Format-specific implementations (PNG)</li>
+                  <li>
+                    • <strong>EXIF:</strong> Standard camera metadata (JPEG,
+                    TIFF)
+                  </li>
+                  <li>
+                    • <strong>RIFF:</strong> Container-based metadata (WebP)
+                  </li>
+                  <li>
+                    • <strong>Custom:</strong> Format-specific implementations
+                    (PNG)
+                  </li>
                 </ul>
               </div>
             </div>
           </div>
-          
+
           <div className="mt-6 p-4 bg-green-50 rounded-lg">
-            <h3 className="font-semibold text-green-900 mb-2">✨ Universal Support Features</h3>
+            <h3 className="font-semibold text-green-900 mb-2">
+              ✨ Universal Support Features
+            </h3>
             <ul className="text-sm text-green-800 space-y-1">
               <li>• Automatic format detection and capability assessment</li>
               <li>• Multiple metadata reading/writing methods</li>
               <li>• Comprehensive GPS coordinate support</li>
               <li>• Format-specific optimization for best compatibility</li>
               <li>• Real-time support status for each uploaded image</li>
-              <li>• Intelligent fallback methods when primary support unavailable</li>
+              <li>
+                • Intelligent fallback methods when primary support unavailable
+              </li>
             </ul>
           </div>
         </div>
